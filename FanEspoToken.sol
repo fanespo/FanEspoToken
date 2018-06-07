@@ -11,6 +11,7 @@ contract FanEspoToken {
       uint256 totalPrize;
       address[] entry;
       bool available;
+      bool started;
     }
 
     address public owner;
@@ -122,6 +123,7 @@ contract FanEspoToken {
             } else {
               feePercentage = 5;
             }
+            contest.started = false;
             contest.fanespoFee = feePercentage * _entryFee * _maxParticipant / 100 ;
             contest.totalPrize = _entryFee * _maxParticipant - contest.fanespoFee;
             contests[_id] = contest;
@@ -161,6 +163,7 @@ contract FanEspoToken {
         for(uint i = 0; i < contests[_id].entry.length; i++) {
           transferFrom(contests[_id].entry[i], msg.sender, contests[_id].entryFee);
         }
+        contests[_id].started = true;
     }
 
     function endContest(bytes24 _id, uint[] rank, uint[] prize) public isRunning onlyOwner {
@@ -173,6 +176,7 @@ contract FanEspoToken {
 
     function cancelContest(bytes24 _id) public isRunning onlyOwner {
         require(contests[_id].available);
+        require(contests[_id].started);
         require(now < contests[_id].startDate);
         require(contests[_id].curParticipant < contests[_id].maxParticipant);
         delete contests[_id];
