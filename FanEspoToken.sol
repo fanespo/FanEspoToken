@@ -173,6 +173,8 @@ contract FanEspoToken {
 
     function cancelContest(bytes24 _id) public isRunning onlyOwner {
         require(contests[_id].available);
+        require(now < contests[_id].startDate);
+        require(contests[_id].curParticipant < contests[_id].maxParticipant);
         delete contests[_id];
     }
 }
