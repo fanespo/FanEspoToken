@@ -30,6 +30,13 @@ contract FanEspoToken {
 
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Burn(address indexed from, uint256 value);
+    event CreateContest(bytes24 indexed _id, uint256 _entryFee, uint256 _maxParticipant, uint256 _startDate);
+    event StartContest(bytes24 indexed _id, uint256 startDate);
+    event CancelContest(bytes24 indexed _id);
+    event EndContest(bytes24 indexed _id, uint[] rank, uint[] prize);
+    event JoinContest(bytes24 indexed _id, address indexed sender);
+    event LeaveContest(bytes24 indexed _id, address indexed sender);
+
     modifier onlyOwner {
         require(msg.sender == owner);
         _;
@@ -45,7 +52,7 @@ contract FanEspoToken {
         _;
     }
 
-    constructor() public {
+    function FanEspoToken() public {
         totalSupply = initialSupply * 10 ** uint256(decimals);
         balanceOf[msg.sender] = totalSupply;
         owner = msg.sender;
@@ -104,8 +111,7 @@ contract FanEspoToken {
         uint256 _startDate
         ) public isRunning onlyOwner {
             require(_id.length == 24);
-            require(_entryFee != 0);
-            require(_maxParticipant != 0);
+            require(_maxParticipant > 0);
             require(_startDate > now);
             Contest memory contest;
             contest.available = true;
@@ -127,6 +133,7 @@ contract FanEspoToken {
             contest.fanespoFee = feePercentage * _entryFee * _maxParticipant / 100 ;
             contest.totalPrize = _entryFee * _maxParticipant - contest.fanespoFee;
             contests[_id] = contest;
+            emit CreateContest(_id, _entryFee, _maxParticipant, _startDate);
     }
 
     function joinContest(bytes24 _id) public isRunning validAddress {
@@ -136,24 +143,33 @@ contract FanEspoToken {
         contests[_id].entry.push(msg.sender);
         contests[_id].curParticipant++;
         approve(owner, contests[_id].entryFee);
+
+        emit JoinContest(_id, msg.sender);
     }
 
-    function indexOf(address[] array, address value) public isRunning returns (int index){
+    function indexOf(address[] array, address value, uint n) public isRunning view returns (int index){
         uint i = 0;
+        uint k = 0;
         for(i = 0; i < array.length; i++) {
           if(array[i] == value) {
-            return int(i);
+            if(k == n) {
+              return int(i);
+            } else {
+              k ++;
+            }
           }
         }
         return -1;
     }
 
-    function leaveContest(bytes24 _id) public isRunning validAddress {
+    function leaveContest(bytes24 _id, uint n) public isRunning validAddress {
         require(contests[_id].available);
-        require(indexOf(contests[_id].entry, msg.sender) != -1);
-        delete contests[_id].entry[uint(indexOf(contests[_id].entry, msg.sender))];
+        require(indexOf(contests[_id].entry, msg.sender, n) != -1);
+        delete contests[_id].entry[uint(indexOf(contests[_id].entry, msg.sender, n))];
         contests[_id].curParticipant--;
         allowance[msg.sender][owner] -= contests[_id].entryFee;
+
+        emit LeaveContest(_id, msg.sender);
     }
 
     function startContest(bytes24 _id) public isRunning onlyOwner {
@@ -164,6 +180,8 @@ contract FanEspoToken {
           transferFrom(contests[_id].entry[i], msg.sender, contests[_id].entryFee);
         }
         contests[_id].started = true;
+
+        emit StartContest(_id, now);
     }
 
     function endContest(bytes24 _id, uint[] rank, uint[] prize) public isRunning onlyOwner {
@@ -172,13 +190,15 @@ contract FanEspoToken {
         for(uint i = 0; i < rank.length; i++) {
           transfer(contests[_id].entry[rank[i]], prize[i] * contests[_id].totalPrize / 10000);
         }
+        emit EndContest(_id, rank, prize);
     }
 
     function cancelContest(bytes24 _id) public isRunning onlyOwner {
         require(contests[_id].available);
-        require(contests[_id].started);
-        require(now < contests[_id].startDate);
+        require(contests[_id].started == false);
         require(contests[_id].curParticipant < contests[_id].maxParticipant);
         delete contests[_id];
+
+        emit CancelContest(_id);
     }
 }
