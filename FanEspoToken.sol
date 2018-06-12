@@ -186,6 +186,7 @@ contract FanEspoToken {
 
     function endContest(bytes24 _id, uint256[] rank, uint256[] prize) public isRunning onlyOwner {
         require(contests[_id].available);
+        require(contests[_id].started);
         require(rank.length == prize.length);
         for(uint i = 0; i < rank.length; i++) {
           transfer(contests[_id].entry[rank[i]], prize[i] * contests[_id].totalPrize / 10000);
