@@ -12,6 +12,7 @@ contract FanEspoToken {
       address[] entry;
       bool available;
       bool started;
+      bool ended;
     }
 
     address public owner;
@@ -130,6 +131,7 @@ contract FanEspoToken {
               feePercentage = 5;
             }
             contest.started = false;
+            contest.ended = false;
             contest.fanespoFee = feePercentage * _entryFee * _maxParticipant / 100 ;
             contest.totalPrize = _entryFee * _maxParticipant - contest.fanespoFee;
             contests[_id] = contest;
@@ -187,10 +189,13 @@ contract FanEspoToken {
     function endContest(bytes24 _id, uint256[] rank, uint256[] prize) public isRunning onlyOwner {
         require(contests[_id].available);
         require(contests[_id].started);
+        require(contests[_id].ended == false);
         require(rank.length == prize.length);
         for(uint i = 0; i < rank.length; i++) {
           transfer(contests[_id].entry[rank[i]], prize[i] * contests[_id].totalPrize / 10000);
         }
+
+        contests[_id].ended = true;
         emit EndContest(_id, rank, prize);
     }
 
