@@ -33,7 +33,7 @@ contract FanEspoToken {
     event CreateContest(bytes24 indexed _id, uint256 _entryFee, uint256 _maxParticipant, uint256 _startDate);
     event StartContest(bytes24 indexed _id, uint256 startDate);
     event CancelContest(bytes24 indexed _id);
-    event EndContest(bytes24 indexed _id, uint[] rank, uint[] prize);
+    event EndContest(bytes24 indexed _id, uint256 rank, uint256 prize);
     event JoinContest(bytes24 indexed _id, address indexed sender);
     event LeaveContest(bytes24 indexed _id, address indexed sender);
 
@@ -184,7 +184,7 @@ contract FanEspoToken {
         emit StartContest(_id, now);
     }
 
-    function endContest(bytes24 _id, uint[] rank, uint[] prize) public isRunning onlyOwner {
+    function endContest(bytes24 _id, uint256[] rank, uint256[] prize) public isRunning onlyOwner {
         require(contests[_id].available);
         require(rank.length == prize.length);
         for(uint i = 0; i < rank.length; i++) {
