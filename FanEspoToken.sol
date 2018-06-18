@@ -84,8 +84,11 @@ contract FanEspoToken {
     }
 
     function approve(address _spender, uint256 _value) public isRunning validAddress returns (bool success) {
-        require(_value == 0 || allowance[msg.sender][_spender] == 0);
-        allowance[msg.sender][_spender] = _value;
+        if(allowance[msg.sender][_spender] == 0) {
+          allowance[msg.sender][_spender] = _value;
+        } else {
+          allowance[msg.sender][_spender] += _value;
+        }
         return true;
     }
 
@@ -202,7 +205,7 @@ contract FanEspoToken {
     function cancelContest(bytes24 _id) public isRunning onlyOwner {
         require(contests[_id].available);
         require(contests[_id].started == false);
-        require(contests[_id].curParticipant < contests[_id].maxParticipant);
+
         delete contests[_id];
 
         emit CancelContest(_id);
